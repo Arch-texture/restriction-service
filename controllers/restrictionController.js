@@ -38,3 +38,16 @@ const validateStudent = async (req, res, next) => {
     next(error);
   }
 };
+
+const assignRestriction = async (req, res, next) => {
+  const { uuid_student, uuid_restriction } = req.body;
+  try {
+    await db.collection('studentRestrictions').add({
+      uuid_student,
+      uuid_restriction,
+    });
+    res.status(201).json({ message: 'Restriction assigned successfully.' });
+  } catch (error) {
+    next(error);
+  }
+};
