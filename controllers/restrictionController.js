@@ -2,6 +2,7 @@
 const db = require('../helpers/firebase');
 const Restriction = require('../models/restriction');
 const StudentRestriction = require('../models/studentRestriction');
+const { v4: uuidv4 } = require('uuid');
 
 const getRestrictions = async (req, res, next) => {
   try {
@@ -40,16 +41,28 @@ const validateStudent = async (req, res, next) => {
 };
 
 const assignRestriction = async (req, res, next) => {
-  const { uuid_student, uuid_restriction } = req.body;
-  try {
-    await db.collection('studentRestrictions').add({
-      uuid_student,
-      uuid_restriction,
-    });
-    res.status(201).json({ message: 'Restriction assigned successfully.' });
-  } catch (error) {
-    next(error);
-  }
+    const { uuid_student, reason } = req.body;
+
+    try {
+      const uuid_restriction = uuidv4();
+  
+      await db.collection('restrictions').doc(uuid_restriction).set({
+        uuid: uuid_restriction,
+        reason,
+      });
+  
+      await db.collection('studentRestrictions').add({
+        uuid_student,
+        uuid_restriction,
+      });
+  
+      res.status(201).json({
+        message: 'Restriction created and assigned successfully.',
+        uuid_restriction,
+      });
+    } catch (error) {
+      next(error);
+    }
 };
 
 const removeRestriction = async (req, res, next) => {
