@@ -5,16 +5,63 @@ const StudentRestriction = require('../models/studentRestriction');
 const { v4: uuidv4 } = require('uuid');
 
 const getRestrictions = async (req, res, next) => {
-  try {
-    const snapshot = await db.collection('restrictions').get();
-    const restrictions = [];
-    snapshot.forEach((doc) => {
-      restrictions.push({ id: doc.id, ...doc.data() });
-    });
-    res.status(200).json(restrictions);
-  } catch (error) {
-    next(error);
-  }
+    const { uuid_student } = req.params;
+
+    try {
+      const studentRestrictionsSnapshot = await db
+        .collection('studentRestrictions')
+        .where('uuid_student', '==', uuid_student)
+        .get();
+  
+      if (studentRestrictionsSnapshot.empty) {
+        return res.status(200).json({
+          message: 'No restrictions found for this student.',
+          restrictions: [],
+        });
+      }
+  
+      let uuid_restrictions = [];
+      studentRestrictionsSnapshot.forEach((doc) => {
+        uuid_restrictions.push(doc.data().uuid_restriction);
+      });
+  
+      uuid_restrictions = [...new Set(uuid_restrictions)];
+
+      const restrictions = [];
+  
+      if (uuid_restrictions.length <= 10) {
+        const restrictionsSnapshot = await db
+          .collection('restrictions')
+          .where('uuid', 'in', uuid_restrictions)
+          .get();
+  
+        restrictionsSnapshot.forEach((doc) => {
+          restrictions.push(doc.data());
+        });
+      } else {
+        const batches = [];
+        while (uuid_restrictions.length) {
+          const batch = uuid_restrictions.splice(0, 10);
+          batches.push(
+            db
+              .collection('restrictions')
+              .where('uuid', 'in', batch)
+              .get()
+          );
+        }
+  
+        const results = await Promise.all(batches);
+        results.forEach((restrictionsSnapshot) => {
+          restrictionsSnapshot.forEach((doc) => {
+            restrictions.push(doc.data());
+          });
+        });
+      }
+  
+      res.status(200).json({ restrictions });
+    } catch (error) {
+      next(error);
+    }
 };
 
 const validateStudent = async (req, res, next) => {
