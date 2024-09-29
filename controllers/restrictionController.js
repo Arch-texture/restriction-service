@@ -15,3 +15,26 @@ const getRestrictions = async (req, res, next) => {
     next(error);
   }
 };
+
+const validateStudent = async (req, res, next) => {
+  const { uuid_student } = req.params;
+  try {
+    const snapshot = await db
+      .collection('studentRestrictions')
+      .where('uuid_student', '==', uuid_student)
+      .get();
+
+    if (snapshot.empty) {
+      return res.status(200).json({ restricted: false });
+    }
+
+    const restrictions = [];
+    snapshot.forEach((doc) => {
+      restrictions.push(doc.data().uuid_restriction);
+    });
+
+    res.status(200).json({ restricted: true, restrictions });
+  } catch (error) {
+    next(error);
+  }
+};
