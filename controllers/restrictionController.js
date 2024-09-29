@@ -51,3 +51,35 @@ const assignRestriction = async (req, res, next) => {
     next(error);
   }
 };
+
+const removeRestriction = async (req, res, next) => {
+  const { uuid_student, uuid_restriction } = req.body;
+  try {
+    const snapshot = await db
+      .collection('studentRestrictions')
+      .where('uuid_student', '==', uuid_student)
+      .where('uuid_restriction', '==', uuid_restriction)
+      .get();
+
+    if (snapshot.empty) {
+      return res.status(404).json({ message: 'Restriction not found.' });
+    }
+
+    const batch = db.batch();
+    snapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+    await batch.commit();
+
+    res.status(200).json({ message: 'Restriction removed successfully.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+    getRestrictions,
+    validateStudent,
+    assignRestriction,
+    removeRestriction,
+};
