@@ -30,10 +30,10 @@ router.get(
   restrictionController.validateStudent
 );
 router.get(
-    '/validateRestriction',
-    validateRestrictionValidation,
-    restrictionController.validateRestriction
-  );
+  "/validateRestriction/:query",
+  validateFields,
+  restrictionController.validateRestriction
+);
 router.post(
   "/assign",
   assignRestrictionValidation,
