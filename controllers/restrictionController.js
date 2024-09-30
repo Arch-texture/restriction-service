@@ -1,7 +1,6 @@
 const db = require("../helpers/firebase");
 const Restriction = require("../models/restriction");
 const StudentRestriction = require("../models/studentRestriction");
-const { validationResult } = require("express-validator");
 const { v4: uuidv4 } = require("uuid");
 
 
@@ -98,48 +97,33 @@ const validateStudent = async (req, res, next) => {
 };
 
 const validateRestriction = async (req, res, next) => {
-  const { uuid, reason } = req.query;
-
+  const { query } = req.params;
   try {
-    if (!uuid && !reason) {
-      return res.status(400).json({ message: 'At least one of uuid or reason must be provided.' });
+    const snapshot_uuid = await db
+      .collection("restrictions")
+      .where("uuid", "==", query)
+      .get();
+
+    const snapshot_reason = await db
+      .collection("restrictions")
+      .where("reason", "==", query)
+      .limit(1)
+      .get();
+
+    if (snapshot_uuid.empty && snapshot_reason.empty) {
+      return res.status(404).json({ message: "Restriction not found." });
     }
-
-    let restrictions = [];
-    const restrictionIds = new Set();
-
-    if (uuid) {
-      const uuidSnapshot = await db
-        .collection('restrictions')
-        .where('uuid', '==', uuid)
-        .get();
-
-      uuidSnapshot.forEach((doc) => {
-        restrictionIds.add(doc.id);
-        restrictions.push(doc.data());
-      });
+    if (!snapshot_uuid.empty) {
+      const uuid_restriction = snapshot_uuid.docs[0].data().uuid;
+      const reason = snapshot_uuid.docs[0].data().reason;
+      return res.status(200).json({ message: "Restriction found.", uuid_restriction, reason });
     }
-
-    if (reason) {
-      const reasonSnapshot = await db
-        .collection('restrictions')
-        .where('reason', '==', reason)
-        .limit(1)
-        .get();
-
-      reasonSnapshot.forEach((doc) => {
-        if (!restrictionIds.has(doc.id)) {
-          restrictionIds.add(doc.id);
-          restrictions.push(doc.data());
-        }
-      });
+    else
+    {
+      const uuid_restriction = snapshot_reason.docs[0].data().uuid;
+      const reason = snapshot_reason.docs[0].data().reason;
+      return res.status(200).json({ message: "Restriction found.", uuid_restriction, reason });
     }
-
-    if (restrictions.length === 0) {
-      return res.status(404).json({ message: 'Restriction not found.' });
-    }
-
-    res.status(200).json({ message: 'Restriction(s) found.', restrictions });
   } catch (error) {
     next(error);
   }
