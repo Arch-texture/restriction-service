@@ -41,24 +41,3 @@ exports.removeRestrictionValidation = [
     .isUUID()
     .withMessage("uuid_restriction must be a valid UUID."),
 ];
-
-exports.validateRestrictionValidation = [
-  query("uuid").optional().isUUID().withMessage("uuid must be a valid UUID."),
-  query("reason")
-    .optional()
-    .trim()
-    .notEmpty()
-    .withMessage("reason must not be empty."),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!req.query.uuid && !req.query.reason) {
-      return res
-        .status(400)
-        .json({ message: "At least one of uuid or reason must be provided." });
-    }
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    next();
-  },
-];
