@@ -5,7 +5,7 @@ const helmet = require("helmet");
 const compression = require("compression");
 const http = require("http");
 
-const restrictionRoutes = require("../routes/restrictions");
+const restrictionRoutes = require("../routes/restrictionRoutes");
 
 const errorHandler = require("../middleware/errorHandler");
 
