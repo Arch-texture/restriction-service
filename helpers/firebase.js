@@ -1,8 +1,15 @@
-const admin = require('firebase-admin');
-const serviceAccount = require('./restriction-service-1bf6b-firebase-adminsdk-jem60-0d1fd48830.json');
+const admin = require("firebase-admin");
+const path = require("path");
+
+require("dotenv").config();
+
+const serviceAccountPath = path.resolve(
+  __dirname,
+  process.env.FIREBASE_SERVICE_ACCOUNT
+);
 
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+  credential: admin.credential.cert(serviceAccountPath),
 });
 
 const db = admin.firestore();
