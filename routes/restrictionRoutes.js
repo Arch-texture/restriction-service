@@ -2,11 +2,20 @@ const express = require("express");
 const router = express.Router();
 const restrictionController = require("../controllers/restrictionController");
 const {
+  createRestrictionValidation,
   assignRestrictionValidation,
   validateStudentValidation,
+  validateRestrictionValidation,
   removeRestrictionValidation,
 } = require("../helpers/restrictionValidator");
-const validateFields = require("../middleware/validateFields");
+const validateFields = require("../middleware/errorHandler");
+
+router.post(
+  "/",
+  createRestrictionValidation,
+  validateFields,
+  restrictionController.createRestriction
+);
 
 router.get(
   "/student/:uuid_student",
@@ -15,10 +24,16 @@ router.get(
   restrictionController.getRestrictions
 );
 router.get(
-  "/validate/:uuid_student",
+  "/validateStudent/:uuid_student",
   validateStudentValidation,
   validateFields,
   restrictionController.validateStudent
+);
+router.get(
+  "/validateRestriction/:uuid_restriction",
+  validateRestrictionValidation,
+  validateFields,
+  restrictionController.validateRestriction
 );
 router.post(
   "/assign",
