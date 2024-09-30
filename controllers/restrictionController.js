@@ -1,6 +1,7 @@
 const db = require("../helpers/firebase");
 const Restriction = require("../models/restriction");
 const StudentRestriction = require("../models/studentRestriction");
+const { validationResult } = require("express-validator");
 const { v4: uuidv4 } = require("uuid");
 
 
@@ -15,7 +16,7 @@ const createRestriction = async (req, res, next) => {
       reason,
     });
 
-    res.status(201).json({ message: "Restriction created successfully.", uuid_restriction });
+    res.status(201).json({ message: "Restriction created successfully.", uuid_restriction, reason });
   } catch (error) {
     next(error);
   }
@@ -97,18 +98,47 @@ const validateStudent = async (req, res, next) => {
 };
 
 const validateRestriction = async (req, res, next) => {
-  const { uuid_restriction } = req.params;
-  try {
-    const snapshot = await db
-      .collection("restrictions")
-      .where("uuid", "==", uuid_restriction)
-      .get();
+  const { uuid, reason } = req.query;
 
-    if (snapshot.empty) {
-      return res.status(404).json({ message: "Restriction not found." });
+  try {
+    if (!uuid && !reason) {
+      return res.status(400).json({ message: 'At least one of uuid or reason must be provided.' });
     }
 
-    res.status(200).json({ message: "Restriction found." });
+    let restrictions = [];
+    const restrictionIds = new Set();
+
+    if (uuid) {
+      const uuidSnapshot = await db
+        .collection('restrictions')
+        .where('uuid', '==', uuid)
+        .get();
+
+      uuidSnapshot.forEach((doc) => {
+        restrictionIds.add(doc.id);
+        restrictions.push(doc.data());
+      });
+    }
+
+    if (reason) {
+      const reasonSnapshot = await db
+        .collection('restrictions')
+        .where('reason', '==', reason)
+        .get();
+
+      reasonSnapshot.forEach((doc) => {
+        if (!restrictionIds.has(doc.id)) {
+          restrictionIds.add(doc.id);
+          restrictions.push(doc.data());
+        }
+      });
+    }
+
+    if (restrictions.length === 0) {
+      return res.status(404).json({ message: 'Restriction not found.' });
+    }
+
+    res.status(200).json({ message: 'Restriction(s) found.', restrictions });
   } catch (error) {
     next(error);
   }
