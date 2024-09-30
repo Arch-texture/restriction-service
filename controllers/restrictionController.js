@@ -124,6 +124,7 @@ const validateRestriction = async (req, res, next) => {
       const reasonSnapshot = await db
         .collection('restrictions')
         .where('reason', '==', reason)
+        .limit(1)
         .get();
 
       reasonSnapshot.forEach((doc) => {
